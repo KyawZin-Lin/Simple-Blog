@@ -1,44 +1,36 @@
 const express = require('express');
-
+const morgan = require('morgan');
+const mongoose = require('mongoose');
+const Blog =require('./models/blog');
 //express app
 const app = express();
 
 
+// connect to MongoDB
+const dbURI ='mongodb+srv://kyawzinlinforgit:1022004Kzl@testingcluster.p8glw.mongodb.net/blog_db?retryWrites=true&w=majority&appName=TestingCluster';
+mongoose.connect(dbURI)
+.then((result)=>{
+    app.listen(3000);
+}).catch((err)=>{
+    console.log(err)
+});
 //register view engine 
-
 app.set('view engine', 'ejs')
 //listen for requests 
 
-app.listen(3000);
+
+
+// middleware and static files
+app.use(express.static('public'))
+app.use(morgan('dev'));
+app.use(express.urlencoded({extended :true}))
+
+
 
 app.get('/',(req,res)=>{
 
-    const blogs = [
-        {
-            title: "Understanding JavaScript Closures",
-            snippet: "Closures are a powerful feature in JavaScript that allow inner functions to access variables from their outer scope even after the outer function has returned."
-        },
-        {
-            title: "An Introduction to Laravel",
-            snippet: "Laravel is a popular PHP framework that makes web development simple and elegant, offering features like routing, authentication, and Eloquent ORM."
-        },
-        {
-            title: "Top React Hooks You Should Know",
-            snippet: "React hooks like useState, useEffect, and useReducer simplify functional component logic and enhance state management."
-        },
-        {
-            title: "Why You Should Learn Node.js",
-            snippet: "Node.js enables developers to build scalable, real-time, and efficient backend systems using JavaScript."
-        },
-        {
-            title: "CSS Grid vs. Flexbox: When to Use Which",
-            snippet: "CSS Grid and Flexbox are powerful layout systems, but they are best suited for different types of layout challenges."
-        }
-    ];
-    
-    
-    // res.send('<p>Express </p>')
-    res.render('index',{title : 'Home' , blogs: blogs})    
+   res.redirect('/blogs');
+   
 })
 
 app.get('/about',(req,res)=>{
@@ -47,10 +39,59 @@ app.get('/about',(req,res)=>{
     res.render('about',{title : 'About'});
 
 })
+//blogs routes
 
+app.get('/blogs',(req,res)=>{
+    Blog.find().sort({createdAt : -1})
+    .then((result)=>{
+         res.render('index',{title : 'Home' , blogs: result})    
+    }).catch((err)=>{
+        console.log(err);
+    })
+})
 app.get('/blogs/create',(req,res)=>{
     res.render('create',{title : 'Create Blog'})
 })
+
+app.post('/blogs',(req,res)=>{
+    const blog = new Blog(req.body);
+    blog.save().then(()=>{
+        res.redirect('/blogs');
+    }).catch((err)=>{
+        console.log(err);
+    })
+})
+
+
+// app.get('/add-blog',(req,res)=>{
+//     const blog = new Blog({
+//         title : 'Testing Blog 2',
+//         snippet : 'This is a testing blog 2',
+//         body : 'This is the body of the blog 2'
+//     });
+
+//     blog.save().then((result)=>{
+//         res.send(result);
+//     }).catch((err)=>{
+//        console.log(err);
+//     })
+// });
+
+// app.get('/get-blogs', (req,res)=>{
+//     Blog.find().then((result)=>{
+//         res.send(result);
+//     }).catch((err)=>{
+//        console.log(err);
+//     })
+// })
+
+// app.get('/get-single-blog',(req,res)=>{
+//     Blog.findById(req.query.id).then((result)=>{
+//         res.send(result);
+//     }).catch((err)=>{
+//        console.log(err);
+//     })
+// })
 
 app.use((req,res)=>{
     // res.status(404).sendFile('./views/404.html',{root : __dirname});
